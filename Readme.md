@@ -1,3 +1,12 @@
+# Accesos importantes:
+
+| Descripción | Path Local | URL (Si aplica) |
+| ------- | ------- | ------- |
+| Nuevo portal web (código fuente) | OneDrive\Data World\Clientes\Telas Real\proyecto_bi | [Git Hub](https://github.com/Elkinrodriguez77/telasreal_portalbi) | 
+| Dash PBI Comercial | OneDrive\Data World\Clientes\Telas Real\BI | Sin públicar en portal web aún |
+| Solicitudes de ajustes comerciales | OneDrive\Data World\Clientes\Telas Real\Backlog_Solicitudes | [Enlace OneDrive](https://1drv.ms/w/c/7922b0b09328d329/IQBcH_EvrZ5qSbp1TC07eSFiAbbKKj87WH94MXCDVyxGFuQ?e=9ubFuB) |
+
+
 # Telas Real — Proyecto BI
 **Integración API Odoo → Python → Power Query → Power BI Service**
 
