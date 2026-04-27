@@ -71,7 +71,7 @@ echo "TELAS_API_KEY=tu_api_key_aqui" > .env
 
 ## PASO 1 — Validar conexión
 
-**Archivo:** [`01_validacion/01_validar_conexion.py`](../01_validacion/01_validar_conexion.py)
+**Archivo:** [`01_validacion/01_validar_conexion.py`](/01_validacion/01_validar_conexion.py)
 
 Verifica que tu API Key es válida y muestra el estado actual de
 todos los endpoints en tiempo real.
@@ -95,7 +95,7 @@ python 01_validacion/01_validar_conexion.py
 
 ## PASO 2a — Ver claves de un endpoint nuevo
 
-**Archivo:** [`02_exploracion/02_ver_claves.py`](../02_exploracion/02_ver_claves.py)
+**Archivo:** [`02_exploracion/02_ver_claves.py`](/02_exploracion/02_ver_claves.py)
 
 Usar cada vez que agregues un endpoint nuevo al proyecto.
 Edita la variable `ENDPOINT_A_INSPECCIONAR` en el archivo y ejecuta:
@@ -121,7 +121,7 @@ Claves raíz de /api/v1/products/catalog:
 
 ## PASO 2b — Explorar schema completo
 
-**Archivo:** [`02_exploracion/03_explorar_schema.py`](../02_exploracion/03_explorar_schema.py)
+**Archivo:** [`02_exploracion/03_explorar_schema.py`](/02_exploracion/03_explorar_schema.py)
 
 Analiza todos los endpoints definidos en `config.py` y genera el
 schema con tipos de datos y código M sugerido.
@@ -158,7 +158,7 @@ python 02_exploracion/03_explorar_schema.py
 
 ## PASO 3 — Construir consulta Power Query (M)
 
-**Archivo:** [`03_power_query/consultas_m.m`](../03_power_query/consultas_m.m)
+**Archivo:** [`03_power_query/consultas_m.m`](/03_power_query/consultas_m.m)
 
 Contiene las consultas M listas para cada endpoint.
 
