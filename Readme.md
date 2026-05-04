@@ -5,6 +5,7 @@
 | Nuevo portal web (código fuente) | OneDrive\Data World\Clientes\Telas Real\proyecto_bi | [Git Hub](https://github.com/Elkinrodriguez77/telasreal_portalbi) | 
 | Dash PBI Comercial | OneDrive\Data World\Clientes\Telas Real\BI | Sin públicar en portal web aún |
 | Solicitudes de ajustes comerciales | OneDrive\Data World\Clientes\Telas Real\Backlog_Solicitudes | [Enlace OneDrive](https://1drv.ms/w/c/7922b0b09328d329/IQBcH_EvrZ5qSbp1TC07eSFiAbbKKj87WH94MXCDVyxGFuQ?e=9ubFuB) |
+| Requerimientos globales de reportes | No Aplica | [Enlace Drive](https://docs.google.com/spreadsheets/d/1CShe2RY7EFQ6s0m8tUqLUXv9_qt4iy-SsJTllQ--jk8/edit?usp=sharing) |
 
 
 # Telas Real — Proyecto BI
@@ -59,11 +60,9 @@ echo "TELAS_API_KEY=tu_api_key_aqui" > .env
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  PASO 1  Validar conexión     → 01_validar_conexion.py      │
-│  PASO 2a Ver claves           → 02_ver_claves.py            │
-│  PASO 2b Explorar schema      → 03_explorar_schema.py       │
-│  PASO 3  Construir consulta M → consultas_m.m               │
-│  PASO 4  Probar en Desktop    → Power BI Desktop            │
-│  PASO 5  Publicar en Service  → Scheduled Refresh           │
+│  PASO 2  Construir consulta M → consultas_m.m               │
+│  PASO 3  Probar en Desktop    → Power BI Desktop            │
+│  PASO 4  Publicar en Service  → Scheduled Refresh           │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -93,72 +92,9 @@ python 01_validacion/01_validar_conexion.py
 
 ---
 
-## PASO 2a — Ver claves de un endpoint nuevo
+## PASO 2 — Construir consulta Power Query (M)
 
-**Archivo:** [`02_exploracion/02_ver_claves.py`](/02_exploracion/02_ver_claves.py)
-
-Usar cada vez que agregues un endpoint nuevo al proyecto.
-Edita la variable `ENDPOINT_A_INSPECCIONAR` en el archivo y ejecuta:
-
-```bash
-python 02_exploracion/02_ver_claves.py
-```
-
-**Output esperado:**
-```
-Claves raíz de /api/v1/products/catalog:
-  'products' (list): [{'id': 368, 'name': 'ACETATO...  ← DATOS (50 items)
-  'count'    (int):  50
-  
-💡 Clave sugerida para config.py: 'products'
-```
-
-**Después de correrlo:**
-1. Copia la clave sugerida
-2. Agrégala al diccionario `ENDPOINTS` en [`config.py`](../config.py)
-
----
-
-## PASO 2b — Explorar schema completo
-
-**Archivo:** [`02_exploracion/03_explorar_schema.py`](/02_exploracion/03_explorar_schema.py)
-
-Analiza todos los endpoints definidos en `config.py` y genera el
-schema con tipos de datos y código M sugerido.
-
-```bash
-python 02_exploracion/03_explorar_schema.py
-```
-
-**Output esperado:**
-```
-📋 SCHEMA:
-   Columna                             Tipo         Nulos    Únicos   Ejemplo
-   id                                  int64        0%       50       368
-   name                                object       0%       50       ACETATO AZUL CIELO C#45
-   list_price                          float64      0%       8        14500.0
-   ...
-
-⚠️  ALERTAS DE CALIDAD:
-   • 'uom_id' — contiene listas → requiere expansión en M
-
-💡 TIPOS SUGERIDOS PARA POWER QUERY (M):
-   Table.TransformColumnTypes(Expand, {
-       {"id",         Int64.Type},
-       {"name",       type text},
-       ...
-   })
-```
-
-**Después de correrlo:**
-1. Copia los tipos M sugeridos del output
-2. Construye la consulta en `03_power_query/consultas_m.m`
-
----
-
-## PASO 3 — Construir consulta Power Query (M)
-
-**Archivo:** [`03_power_query/consultas_m.m`](/03_power_query/consultas_m.m)
+**Archivo:** [`02_power_query/consultas_m.m`](/02_power_query/consultas_m.m)
 
 Contiene las consultas M listas para cada endpoint.
 
@@ -185,7 +121,20 @@ Web.Contents("https://dominio.com", [RelativePath = "api/v1/endpoint", Headers =
 
 ---
 
-## PASO 4 — Probar en Power BI Desktop
+## Mapeo de consultas Python → Power Query (M)
+
+Cada script de exploración en Python tiene su consulta M equivalente lista para Power BI.
+Úsalos en paralelo: Python para verificar los datos en terminal, M para cargarlos en el modelo.
+
+| Script Python | Archivo M | Endpoint | Descripción | Estado |
+|---|---|---|---|---|
+| [`01_validacion/02_explorar_catalogo_productos.py`](/01_validacion/02_explorar_catalogo_productos.py) | [`02_power_query/catalogo_productos.m`](/02_power_query/catalogo_productos.m) | `/api/v1/products/catalog` | Catálogo completo de productos: precio, stock disponible, código interno, unidad de medida, categoría, rendimiento y código alfanumérico. Paginación automática — trae todos los registros aunque el catálogo crezca. | ✅ Lista |
+
+> A medida que se activen nuevos endpoints, agregar aquí la fila correspondiente siguiendo el mismo patrón.
+
+---
+
+## PASO 3 — Probar en Power BI Desktop
 
 1. Abre Power BI Desktop
 2. `Inicio → Transformar datos → Editor avanzado`
@@ -195,7 +144,7 @@ Web.Contents("https://dominio.com", [RelativePath = "api/v1/endpoint", Headers =
 
 ---
 
-## PASO 5 — Publicar en Power BI Service
+## PASO 4 — Publicar en Power BI Service
 
 ### Configuración de credenciales
 
@@ -250,33 +199,17 @@ Dataset → ... → Actualizar ahora → Historial de actualización → ✅ Cor
 
 ## Bugs y limitaciones conocidas
 
-### Bug — Paginación rota en `/api/v1/products/catalog`
+### ~~Bug — Paginación rota en `/api/v1/products/catalog`~~ — ✅ Resuelto
 
 | Campo | Detalle |
 |---|---|
 | Detectado | Abril 2026 |
-| Reportado a | Emmanuel (dev API) |
-| Estado | ⏳ Pendiente corrección |
+| Resuelto | Mayo 2026 |
+| Solución | Usar `?limit=1000&offset=0` — el endpoint acepta hasta `limit=1000` |
+| Total real | 689 productos — confirmado vía `total` en el response |
 
-**Problema:** El parámetro `offset` es ignorado — siempre devuelve
-los mismos 50 registros causando loop infinito al paginar.
-
-**Evidencia:**
-```
-offset=0   → IDs: [368, 369, 370...] ← siempre igual
-offset=50  → IDs: [368, 369, 370...] ← siempre igual
-offset=100 → IDs: [368, 369, 370...] ← siempre igual
-```
-
-**Impacto:** La documentación indica 93 productos en Odoo,
-solo 50 son accesibles vía API actualmente.
-
-**Corrección solicitada a Emmanuel:**
-```json
-// Agregar campo total al response:
-{ "products": [...], "count": 50, "total": 93 }
-// Y que offset funcione, o aceptar limit=1000
-```
+El endpoint devuelve `total`, `has_more` y `offset` para paginar correctamente.
+Los scripts de Python y M ya implementan el loop automático por `has_more`.
 
 ---
 
