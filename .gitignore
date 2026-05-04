@@ -23,3 +23,10 @@ Thumbs.db
 
 # Entorno virtual
 tr_bi/
+
+# Excel
+*.xlsx
+*.xls
+*.xlsm
+*.xlsb
+*.xlam
