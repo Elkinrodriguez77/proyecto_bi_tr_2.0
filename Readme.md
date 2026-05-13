@@ -10,6 +10,9 @@
 
 
 # Telas Real — Proyecto BI
+
+**Fuentes de datos:** ver el inventario en [fuentes_datos.md](./fuentes_datos.md) (enlaces, endpoints y nombres de tablas en Power BI).
+
 **Integración API Odoo → Python → Power Query → Power BI Service**
 
 > **Fuente de verdad:** Odoo vía XML-RPC  
