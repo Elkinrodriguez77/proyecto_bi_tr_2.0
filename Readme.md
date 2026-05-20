@@ -236,4 +236,4 @@ Los scripts de Python y M ya implementan el loop automático por `has_more`.
 
 ---
 
-*Documentación mantenida por el equipo BI — Telas Real 2026*
+*TR | Documentación mantenida por el equipo BI — Telas Real 2026*
