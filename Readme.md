@@ -25,37 +25,39 @@
 ## Estructura del proyecto
 
 ```
-TelasReal_BI/
+proyecto_bi_tr_2.0/
 │
-├── config.py                          ← Configuración central (endpoints, cliente HTTP)
-├── .env                               ← API Key (NO subir al repo)
+├── config.py                              ← Configuración central (endpoints, cliente HTTP)
+├── .env                                   ← API Key (NO subir al repo)
 ├── .gitignore
+├── requirements.txt                       ← Dependencias del entorno
+├── Readme.md                              ← Este archivo
+├── fuentes_datos.md                       ← Inventario de fuentes de datos
 │
 ├── 01_validacion/
-│   └── 01_validar_conexion.py         ← PASO 1: Verificar API Key y estado de endpoints
+│   ├── 01_validar_conexion.py             ← PASO 1: Verificar API Key y estado de endpoints
+│   └── 02_explorar_catalogo_productos.py  ← PASO 2: Explorar el catálogo de productos
 │
-├── 02_exploracion/
-│   ├── 02_ver_claves.py               ← PASO 2a: Inspeccionar claves de un endpoint nuevo
-│   └── 03_explorar_schema.py          ← PASO 2b: Schema completo + tipos M sugeridos
-│
-├── 03_power_query/
-│   └── consultas_m.m                  ← PASO 3: Consultas M listas para Power BI Desktop
-│
-└── 04_documentacion/
-    └── README.md                      ← Este archivo
+└── 02_power_query/
+    ├── catalogo_productos.m               ← PASO 3: Consulta M lista para Power BI Desktop
+    └── diagnostico_codigo_anterior.m      ← Consulta M de diagnóstico (x_codigo_anterior)
 ```
 
 ---
 
 ## Instalación
 
-```bash
-# 1. Instalar dependencias
-pip install requests pandas python-dotenv
+```powershell
+# 1. Crear el entorno virtual e instalar dependencias
+py -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
 
 # 2. Crear archivo .env en la raíz del proyecto
-echo "TELAS_API_KEY=tu_api_key_aqui" > .env
+"TELAS_API_KEY=tu_api_key_aqui" | Out-File -Encoding utf8 .env
 ```
+
+> **Windows:** los scripts ya fuerzan la salida a UTF-8 para imprimir emojis
+> (`✅`, `❌`) sin `UnicodeEncodeError`. No requiere configuración adicional.
 
 ---
 
@@ -64,7 +66,7 @@ echo "TELAS_API_KEY=tu_api_key_aqui" > .env
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  PASO 1  Validar conexión     → 01_validar_conexion.py      │
-│  PASO 2  Construir consulta M → consultas_m.m               │
+│  PASO 2  Construir consulta M → catalogo_productos.m        │
 │  PASO 3  Probar en Desktop    → Power BI Desktop            │
 │  PASO 4  Publicar en Service  → Scheduled Refresh           │
 └─────────────────────────────────────────────────────────────┘
@@ -98,9 +100,10 @@ python 01_validacion/01_validar_conexion.py
 
 ## PASO 2 — Construir consulta Power Query (M)
 
-**Archivo:** [`02_power_query/consultas_m.m`](/02_power_query/consultas_m.m)
+**Archivo:** [`02_power_query/catalogo_productos.m`](/02_power_query/catalogo_productos.m)
 
-Contiene las consultas M listas para cada endpoint.
+Cada endpoint tiene su propio archivo `.m` en `02_power_query/`, listo para
+pegar en el Editor avanzado de Power BI.
 
 ### Regla crítica — siempre usar `RelativePath`
 
@@ -116,12 +119,13 @@ Web.Contents("https://dominio.com", [RelativePath = "api/v1/endpoint", Headers =
 
 | Consulta | Estado | Archivo |
 |---|---|---|
-| Catálogo de Productos | ✅ Lista | `consultas_m.m` → sección productos_catalogo |
-| Telas Sublimables | ✅ Lista | `consultas_m.m` → sección telas_sublimables |
-| Clientes por Tienda | ✅ Lista | `consultas_m.m` → sección clientes_por_tienda |
-| Ventas Summary | 🔴 Pendiente | Descomentar cuando haya `sale.order` en Odoo |
-| Inventario Stock | 🟡 Pendiente | Descomentar cuando se cargue stock inicial |
-| Producción Summary | 🔴 Pendiente | Descomentar cuando se configuren work centers |
+| Catálogo de Productos | ✅ Lista | `02_power_query/catalogo_productos.m` |
+| Diagnóstico `x_codigo_anterior` | ✅ Lista | `02_power_query/diagnostico_codigo_anterior.m` |
+| Telas Sublimables | 🟡 Pendiente | Crear `.m` cuando se priorice el endpoint |
+| Clientes por Tienda | 🟡 Pendiente | Crear `.m` cuando se priorice el endpoint |
+| Ventas Summary | 🔴 Pendiente | Crear `.m` cuando haya `sale.order` en Odoo |
+| Inventario Stock | 🟡 Pendiente | Crear `.m` cuando se cargue stock inicial |
+| Producción Summary | 🔴 Pendiente | Crear `.m` cuando se configuren work centers |
 
 ---
 
@@ -142,7 +146,7 @@ Cada script de exploración en Python tiene su consulta M equivalente lista para
 
 1. Abre Power BI Desktop
 2. `Inicio → Transformar datos → Editor avanzado`
-3. Pega la consulta M del archivo `consultas_m.m`
+3. Pega la consulta M del archivo `catalogo_productos.m`
 4. Reemplaza `TU_API_KEY_AQUI` con tu key real
 5. Verifica que la tabla carga correctamente
 
@@ -183,20 +187,18 @@ Dataset → ... → Actualizar ahora → Historial de actualización → ✅ Cor
 ```
 1. Ejecutar PASO 1 → confirmar que el endpoint está Live en readiness
 
-2. Editar 02_ver_claves.py:
-   ENDPOINT_A_INSPECCIONAR = "/api/v1/nuevo_endpoint"
-   → Ejecutar → anotar la clave JSON sugerida
-
-3. Agregar a config.py → ENDPOINTS:
+2. Agregar a config.py → ENDPOINTS:
    "Nombre": ("/api/v1/nuevo_endpoint", "clave_json", "modelo.odoo")
 
-4. Ejecutar 03_explorar_schema.py
-   → Copiar los tipos M del output
+3. Adaptar 01_validacion/02_explorar_catalogo_productos.py:
+   ENDPOINT = "/api/v1/nuevo_endpoint"
+   JSON_KEY = "clave_json"
+   → Ejecutar → inspeccionar columnas y tipos del dataset
 
-5. Agregar nueva sección en consultas_m.m
-   → Usar la plantilla base + tipos M copiados
+4. Crear una consulta M en 02_power_query/<nuevo_endpoint>.m
+   → Usar catalogo_productos.m como plantilla base
 
-6. Probar en Power BI Desktop → publicar
+5. Probar en Power BI Desktop → publicar
 ```
 
 ---

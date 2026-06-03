@@ -11,6 +11,14 @@ import os
 import openpyxl
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# La consola de Windows usa cp1252 por defecto y no puede imprimir emojis
+# (✅, ❌, etc.). Forzamos UTF-8 en la salida para evitar UnicodeEncodeError.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8")
+    except (AttributeError, ValueError):
+        pass
+
 import pandas as pd
 from config import _get
 

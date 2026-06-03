@@ -12,6 +12,14 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# La consola de Windows usa cp1252 por defecto y no puede imprimir emojis
+# (✅, ❌, etc.). Forzamos UTF-8 en la salida para evitar UnicodeEncodeError.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8")
+    except (AttributeError, ValueError):
+        pass
+
 from config import _get
 
 
@@ -54,6 +62,6 @@ if __name__ == "__main__":
     ok = validar_conexion()
     if ok:
         print("\n✅ Listo para continuar con el Paso 2")
-        print("   → Ejecuta: python 02_exploracion/02_ver_claves.py")
+        print("   → Ejecuta: python 01_validacion/02_explorar_catalogo_productos.py")
     else:
         print("\n❌ Corrige la conexión antes de continuar")
