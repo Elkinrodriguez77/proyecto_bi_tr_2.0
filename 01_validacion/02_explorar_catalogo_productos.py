@@ -25,6 +25,15 @@ from config import _get
 ENDPOINT  = "/api/v1/products/catalog"
 JSON_KEY  = "products"
 
+# ─── Filtros del endpoint ──────────────────────────────────────────
+# Por defecto la API filtra sale_ok=True y active=True (solo productos
+# vendibles y no archivados). Para traer TODO el universo (incluidos los
+# "No puede venderse" y los archivados) se usan estos parámetros nuevos:
+#   ?include_non_sellable=true  → ignora el filtro sale_ok
+#   ?active=true|false|all      → true (default) / false (solo archivados) / all
+INCLUIR_NO_VENDIBLES = True    # True = trae también los marcados "No puede venderse"
+ACTIVE               = "all"   # "true" | "false" | "all"
+
 
 def explorar_catalogo():
     print("\n" + "="*60)
@@ -36,8 +45,13 @@ def explorar_catalogo():
         offset  = 0
         todos   = []
 
+        # Filtros opcionales comunes a todas las páginas
+        filtros = {"active": ACTIVE}
+        if INCLUIR_NO_VENDIBLES:
+            filtros["include_non_sellable"] = "true"
+
         while True:
-            data = _get(ENDPOINT, params={"limit": LIMIT, "offset": offset})
+            data = _get(ENDPOINT, params={"limit": LIMIT, "offset": offset, **filtros})
 
             pagina = data.get(JSON_KEY)
             if pagina is None:

@@ -3,6 +3,11 @@
 // Endpoint : GET /api/v1/products/catalog
 // Tabla Odoo: product.template
 // Paginación: limit=1000, loop automático por has_more
+//
+// Filtros: por defecto la API trae solo sale_ok=true y active=true.
+//   include_non_sellable = "true"  → incluye los "No puede venderse"
+//   active = "all"                 → incluye también los archivados
+//   (usar "true" = solo activos, "false" = solo archivados)
 // =============================================================
 
 let
@@ -16,7 +21,12 @@ let
                 BaseUrl,
                 [
                     RelativePath = "api/v1/products/catalog",
-                    Query   = [limit = Number.ToText(Limit), offset = Number.ToText(offset)],
+                    Query   = [
+                        limit                = Number.ToText(Limit),
+                        offset               = Number.ToText(offset),
+                        include_non_sellable = "true",
+                        active               = "all"
+                    ],
                     Headers = [Authorization = "Bearer " & ApiKey, Accept = "application/json"]
                 ]
             )
@@ -42,6 +52,7 @@ let
                          else Text.Split(codigoLimpio, ","),
                 cod1   = if List.Count(partes) >= 1 then Text.Trim(partes{0}) else null,
                 cod2   = if List.Count(partes) >= 2 then Text.Trim(partes{1}) else null,
+                cod3   = if List.Count(partes) >= 3 then Text.Trim(partes{2}) else null,
 
                 // ── uom_id y categ_id: listas [id, nombre] ──────────
                 uomRaw      = try prod[uom_id]    otherwise null,
@@ -61,6 +72,8 @@ let
                 name                  = try prod[name]                 otherwise null,
                 list_price            = try prod[list_price]           otherwise null,
                 default_code          = defCode2,
+                sale_ok               = try prod[sale_ok]              otherwise null,
+                active                = try prod[active]               otherwise null,
                 is_sublimable_fabric  = try prod[is_sublimable_fabric] otherwise null,
                 qty_available         = try prod[qty_available]        otherwise null,
                 x_rendimiento         = try prod[x_rendimiento]        otherwise null,
@@ -71,7 +84,8 @@ let
                 categ_id_num          = categId,
                 categ_name            = categNombre,
                 codigo_antiguo_1      = cod1,
-                codigo_antiguo_2      = cod2
+                codigo_antiguo_2      = cod2,
+                codigo_antiguo_3      = cod3
             ]
         )
     ),
@@ -86,6 +100,8 @@ let
         {"name",                  type text},
         {"list_price",            Currency.Type},
         {"default_code",          type text},
+        {"sale_ok",               type logical},
+        {"active",                type logical},
         {"is_sublimable_fabric",  type logical},
         {"qty_available",         type number},
         {"x_rendimiento",         type number},
@@ -96,8 +112,39 @@ let
         {"categ_id_num",          Int64.Type},
         {"categ_name",            type text},
         {"codigo_antiguo_1",      type text},
-        {"codigo_antiguo_2",      type text}
-    })
+        {"codigo_antiguo_2",      type text},
+        {"codigo_antiguo_3",      type text}
+    }),
+    #"Columnas con nombre cambiado" = Table.RenameColumns(Typed,{
+        {"codigo_antiguo_1", "default_code_referencia"},
+        {"codigo_antiguo_2", "default_code_referencia_2"},
+        {"codigo_antiguo_3", "default_code_referencia_3"}
+    }),
 
+    // ── Llave única para los registros SIN referencia ──────────────
+    // Antes Table.Distinct colapsaba TODOS los null en una sola fila y
+    // perdía ~408 registros. Ahora se conservan los 1.189: a cada producto
+    // sin código se le asigna "SIN-REF-<id>" (id es único), de modo que
+    // sigue sirviendo como llave para el BUSCARV sin chocar entre sí.
+    #"Llave nulos" = Table.AddColumn(
+        #"Columnas con nombre cambiado", "__ref_key",
+        each if [default_code_referencia] = null
+             then "SIN-REF-" & Text.From([id])
+             else [default_code_referencia],
+        type text
+    ),
+    #"Quitar ref vieja" = Table.RemoveColumns(#"Llave nulos", {"default_code_referencia"}),
+    #"Renombrar ref"    = Table.RenameColumns(#"Quitar ref vieja", {{"__ref_key", "default_code_referencia"}}),
+
+    // ── Validación: marca duplicados REALES en default_code_referencia ──
+    // Tras la llave única, solo quedan como duplicados los códigos que de
+    // verdad se repiten en Odoo. Filtra ref_duplicada = true para revisarlos
+    // y corregirlos en el origen (productos distintos con el mismo código).
+    RefBuffer = List.Buffer(#"Renombrar ref"[default_code_referencia]),
+    #"Flag duplicados" = Table.AddColumn(
+        #"Renombrar ref", "ref_duplicada",
+        each List.Count(List.Select(RefBuffer, (x) => x = [default_code_referencia])) > 1,
+        type logical
+    )
 in
-    Typed
+    #"Flag duplicados"
