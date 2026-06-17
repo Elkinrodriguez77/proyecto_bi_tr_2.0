@@ -30,3 +30,5 @@ tr_bi/
 *.xlsm
 *.xlsb
 *.xlam
+
+passwords.txt
